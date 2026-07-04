@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S - AI Assistant</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Rajdhani',sans-serif;background:#050810;color:#00D4FF;overflow:hidden;height:100vh;width:100vw}
+#overlay{position:fixed;inset:0;background:radial-gradient(ellipse at center,#0A0E1A,#000);display:flex;align-items:center;justify-content:center;z-index:1000;transition:opacity 1s,transform 1s}
+#overlay.hide{opacity:0;pointer-events:none}
+.ac{text-align:center}
+.arc{width:180px;height:180px;position:relative;margin:0 auto}
+.arc div{position:absolute;border:3px solid transparent;border-radius:50%}
+.a1{inset:0;border-top-color:#00D4FF;border-bottom-color:#00D4FF;animation:r 3s linear infinite}
+.a2{inset:18px;border-left-color:#00FFFF;border-right-color:#00FFFF;animation:r 2s linear infinite reverse}
+.a3{inset:36px;border-top-color:#00D4FF;border-bottom-color:#00D4FF;animation:r 1.5s linear infinite}
+.acore{position:absolute;inset:60px;background:radial-gradient(circle,#00D4FF,rgba(0,212,255,.4) 50%,transparent 70%);border-radius:50%;animation:glow 2s infinite}
+.atxt{font-family:'Orbitron',sans-serif;font-size:2rem;color:#00D4FF;text-shadow:0 0 30px rgba(0,212,255,.5);margin-top:40px;animation:pt 2s infinite}
+.asub{color:rgba(0,212,255,.5);margin-top:10px;letter-spacing:4px}
+#go{margin-top:30px;padding:15px 40px;font-family:'Orbitron',sans-serif;font-size:1rem;background:0 0;border:2px solid #00D4FF;color:#00D4FF;cursor:pointer;transition:.3s;text-transform:uppercase;letter-spacing:3px}
+#go:hover{background:#00D4FF;color:#0A0E1A;box-shadow:0 0 40px rgba(0,212,255,.5)}
+#hud{position:fixed;inset:0;display:grid;grid-template-columns:260px 1fr 280px;grid-template-rows:55px 1fr 35px;background:#050810;opacity:0;pointer-events:none;transition:opacity .5s}
+#hud.on{opacity:1;pointer-events:all}
+#cv{position:fixed;inset:0;pointer-events:none;z-index:0}
+.top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(180deg,rgba(0,212,255,.08),transparent);border-bottom:1px solid rgba(0,212,255,.15);z-index:10}
+.lg{display:flex;align-items:center;gap:10px}
+.lr{width:30px;height:30px;border:2px solid #00D4FF;border-radius:50%;animation:r 4s linear infinite;position:relative}
+.lr::after{content:'';position:absolute;inset:8px;background:#00D4FF;border-radius:50%;animation:glow 2s infinite}
+.lt{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:900;color:#00D4FF;text-shadow:0 0 15px rgba(0,212,255,.5);letter-spacing:3px}
+.st{display:flex;align-items:center;gap:8px}
+.dt{width:8px;height:8px;background:#4DFF7C;border-radius:50%;animation:p 2s infinite;box-shadow:0 0 10px #4DFF7C}
+.stx{font-size:.7rem;color:#4DFF7C;letter-spacing:2px;font-family:'Share Tech Mono',monospace}
+.ck{text-align:center}
+.tm{font-family:'Orbitron',sans-serif;font-size:1.4rem;color:#00D4FF;text-shadow:0 0 15px rgba(0,212,255,.5);letter-spacing:3px}
+.da{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:rgba(0,212,255,.6)}
+.sr{display:flex;gap:12px}
+.sb{display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:4px}
+.sb label{font-size:.6rem;color:rgba(0,212,255,.5);font-family:'Share Tech Mono',monospace}
+.ba{width:50px;height:5px;background:rgba(0,212,255,.1);border-radius:3px;overflow:hidden}
+.fl{height:100%;background:linear-gradient(90deg,#00D4FF,#00FFFF);border-radius:3px;transition:width .5s}
+.sb span{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:#00D4FF;min-width:30px}
+.lf{grid-column:1;grid-row:2;background:linear-gradient(90deg,rgba(0,212,255,.04),transparent);border-right:1px solid rgba(0,212,255,.1);padding:12px;display:flex;flex-direction:column;gap:12px;z-index:10;overflow-y:auto}
+.ph{display:flex;align-items:center;gap:6px;font-family:'Orbitron',sans-serif;font-size:.65rem;color:#00D4FF;letter-spacing:2px;padding-bottom:8px;border-bottom:1px solid rgba(0,212,255,.15)}
+.sl{display:flex;flex-direction:column;gap:6px}
+.si{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.08);border-radius:4px;font-size:.75rem}
+.si.on{border-color:#00D4FF;box-shadow:0 0 10px rgba(0,212,255,.15)}
+.bg{margin-left:auto;font-size:.55rem;padding:2px 6px;border-radius:8px;font-family:'Share Tech Mono',monospace}
+.bg.g{background:rgba(77,255,124,.15);color:#4DFF7C;border:1px solid rgba(77,255,124,.3)}
+.bg.y{background:rgba(255,200,77,.15);color:#FFC84D;border:1px solid rgba(255,200,77,.3)}
+.wb{margin-top:auto}
+.wv{display:flex;align-items:flex-end;justify-content:center;gap:2px;height:60px;padding:8px;background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.1);border-radius:4px}
+.wb2{width:4px;background:linear-gradient(to top,#00D4FF,#00FFFF);border-radius:2px;animation:wv .8s ease-in-out infinite;animation-delay:calc(var(--i)*.05s)}
+.ct{grid-column:2;grid-row:2;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:5;padding:20px}
+.ow{position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center;margin-bottom:25px}
+.or{position:absolute;border:2px solid #00D4FF;border-radius:50%;opacity:.5}
+.or.r1{inset:0;animation:r 4s linear infinite;border-top-color:transparent;border-bottom-color:transparent}
+.or.r2{inset:15px;animation:r 3s linear infinite reverse;border-left-color:transparent;border-right-color:transparent}
+.or.r3{inset:30px;animation:r 2s linear infinite;border-bottom-color:transparent;border-top-color:transparent}
+.oc{width:80px;height:80px;background:radial-gradient(circle,#00D4FF,rgba(0,212,255,.4) 40%,transparent 70%);border-radius:50%;transition:.3s}
+.oc.on{animation:glow 1s infinite;box-shadow:0 0 60px rgba(0,212,255,.5),0 0 100px rgba(0,212,255,.3)}
+.oc.tk{animation:sp .3s infinite;box-shadow:0 0 80px rgba(0,212,255,.5)}
+.cs{text-align:center;margin-bottom:15px}
+.li{opacity:0;transition:.3s}
+.li.on{opacity:1}
+.li span{font-family:'Orbitron',sans-serif;font-size:.9rem;color:#4DFF7C;letter-spacing:3px;animation:pt 1s infinite}
+.as2{font-family:'Orbitron',sans-serif;font-size:.75rem;color:rgba(0,212,255,.6);letter-spacing:2px;margin-top:8px}
+.ch{width:100%;max-width:550px;height:250px;overflow-y:auto;padding:12px;background:rgba(0,212,255,.02);border:1px solid rgba(0,212,255,.1);border-radius:8px;margin-bottom:15px}
+.ms{display:flex;flex-direction:column;gap:10px}
+.mg{display:flex;gap:8px;animation:si .3s}
+.mg.user{flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;flex-shrink:0;font-family:'Orbitron',sans-serif}
+.mg.user .av{background:rgba(0,212,255,.2);border:1px solid #00D4FF;color:#00D4FF}
+.mg.jarvis .av{background:rgba(77,255,124,.2);border:1px solid #4DFF7C;color:#4DFF7C}
+.mx{max-width:85%;padding:8px 12px;border-radius:8px;font-size:.85rem;line-height:1.4}
+.mg.user .mx{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);color:#00D4FF}
+.mg.jarvis .mx{background:rgba(77,255,124,.08);border:1px solid rgba(77,255,124,.2);color:#4DFF7C}
+.ia{width:100%;max-width:550px}
+.iw{display:flex;gap:8px;align-items:center}
+#inp{flex:1;padding:10px 18px;font-family:'Rajdhani',sans-serif;font-size:1rem;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.25);border-radius:25px;color:#00D4FF;outline:0}
+#inp:focus{border-color:#00D4FF;box-shadow:0 0 20px rgba(0,212,255,.2)}
+#inp::placeholder{color:rgba(0,212,255,.3)}
+.bt{width:42px;height:42px;border-radius:50%;border:1px solid #00D4FF;background:rgba(0,212,255,.1);color:#00D4FF;cursor:pointer;transition:.3s;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.bt:hover{background:#00D4FF;color:#0A0E1A;box-shadow:0 0 20px rgba(0,212,255,.5)}
+.bt.on{background:#FF4D4D;border-color:#FF4D4D;color:#fff;animation:p 1s infinite}
+.rt{grid-column:3;grid-row:2;background:linear-gradient(270deg,rgba(0,212,255,.04),transparent);border-left:1px solid rgba(0,212,255,.1);padding:12px;display:flex;flex-direction:column;gap:12px;z-index:10;overflow-y:auto}
+.lg2{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.le{display:flex;gap:8px;padding:6px 8px;background:rgba(0,212,255,.03);border-radius:4px;font-size:.7rem;border-left:2px solid rgba(0,212,255,.2)}
+.lt2{color:rgba(0,212,255,.4);font-family:'Share Tech Mono',monospace;font-size:.6rem;min-width:40px}
+.lm{color:#00D4FF;font-family:'Share Tech Mono',monospace}
+.wd{padding:10px;background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.1);border-radius:4px}
+.wt{text-align:center;padding:12px 0}
+.tp{font-family:'Orbitron',sans-serif;font-size:1.8rem;color:#00D4FF;text-shadow:0 0 15px rgba(0,212,255,.5)}
+.ds{font-size:.8rem;color:rgba(0,212,255,.5);font-family:'Share Tech Mono',monospace}
+.ac2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ab{padding:8px;font-family:'Rajdhani',sans-serif;font-size:.7rem;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:4px;color:#00D4FF;cursor:pointer;transition:.3s}
+.ab:hover{background:rgba(0,212,255,.15);transform:translateY(-1px)}
+.bot{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(0deg,rgba(0,212,255,.08),transparent);border-top:1px solid rgba(0,212,255,.15);z-index:10}
+.vn{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:rgba(0,212,255,.4);letter-spacing:1px}
+.sc{font-size:.7rem;color:rgba(0,212,255,.5);letter-spacing:1px;white-space:nowrap;animation:st 25s linear infinite;font-family:'Share Tech Mono',monospace}
+.mb,.cb{width:24px;height:24px;border:1px solid rgba(0,212,255,.25);background:0 0;color:#00D4FF;cursor:pointer;border-radius:4px;font-size:.9rem;transition:.3s}
+.mb:hover,.cb:hover{background:rgba(0,212,255,.2)}
+.cb:hover{background:#FF4D4D;border-color:#FF4D4D}
+.nf{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);padding:12px 30px;background:rgba(0,212,255,.15);border:1px solid #00D4FF;border-radius:8px;color:#00D4FF;font-size:.85rem;z-index:1000;transition:.3s;box-shadow:0 0 30px rgba(0,212,255,.3);font-family:'Share Tech Mono',monospace}
+.nf.off{opacity:0;transform:translateX(-50%) translateY(20px);pointer-events:none}
+@keyframes r{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(0,212,255,.5)}50%{box-shadow:0 0 50px rgba(0,212,255,.5),0 0 80px rgba(0,212,255,.3)}}
+@keyframes pt{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes sp{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes wv{0%,100%{height:15%}50%{height:85%}}
+@keyframes si{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes st{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:rgba(0,212,255,.03)}::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="overlay">
+<div class="ac">
+<div class="arc"><div class="a1"></div><div class="a2"></div><div class="a3"></div><div class="acore"></div></div>
+<h1 class="atxt">SAY "HEY JARVIS"</h1>
+<p class="asub">J.A.R.V.I.S AI SYSTEM v2.0</p>
+<button id="go">MANUAL ACTIVATE</button>
+</div>
+</div>
+
+<div id="hud">
+<canvas id="cv"></canvas>
+<header class="top">
+<div class="lg"><div class="lr"></div><span class="lt">J.A.R.V.I.S</span></div>
+<div class="st"><span class="dt"></span><span class="stx" id="ss">INITIALIZING</span></div>
+<div class="ck"><div class="tm" id="tm">00:00:00</div><div class="da" id="da">Loading...</div></div>
+<div class="sr">
+<div class="sb"><label>CPU</label><div class="ba"><div class="fl" id="cf" style="width:0%"></div></div><span id="cv2">0%</span></div>
+<div class="sb"><label>RAM</label><div class="ba"><div class="fl" id="mf" style="width:0%"></div></div><span id="mv">0%</span></div>
+</div>
+</header>
+<aside class="lf">
+<div class="ph">SYSTEMS</div>
+<div class="sl">
+<div class="si on"><span>ON</span><span>AI CORE</span><span class="bg g">ONLINE</span></div>
+<div class="si on"><span>ON</span><span>VOICE MODULE</span><span class="bg g" id="vmStatus">ACTIVE</span></div>
+<div class="si on"><span>ON</span><span>MEMORY BANK</span><span class="bg g">LOADED</span></div>
+<div class="si"><span>OFF</span><span>VISION</span><span class="bg y">STANDBY</span></div>
+<div class="si on"><span>ON</span><span>AUTOMATION</span><span class="bg g">READY</span></div>
+</div>
+<div class="wb"><div class="ph">AUDIO INPUT</div><div class="wv" id="wv"></div></div>
+</aside>
+<main class="ct">
+<div class="ow"><div class="or r1"></div><div class="or r2"></div><div class="or r3"></div><div class="oc" id="oc"></div></div>
+<div class="cs"><div class="li" id="li"><span>LISTENING...</span></div><div class="as2" id="as2">STANDBY</div></div>
+<div class="ch"><div class="ms" id="ms"></div></div>
+<div class="ia"><div class="iw"><input type="text" id="inp" placeholder="Type a command or speak..." autocomplete="off"><button class="bt" id="snd">&#9654;</button><button class="bt" id="mc" title="Click to speak">MIC</button></div></div>
+</main>
+<aside class="rt">
+<div class="ph">ACTIVITY LOG</div>
+<div class="lg2" id="lg2"></div>
+<div class="wd"><div class="ph">WEATHER</div><div class="wt"><div class="tp" id="tp">--C</div><div class="ds" id="ds">Loading...</div></div></div>
+<div class="wd"><div class="ph">QUICK ACTIONS</div><div class="ac2">
+<button class="ab" onclick="J.process('system info')">System</button>
+<button class="ab" onclick="J.process('tell me a joke')">Joke</button>
+<button class="ab" onclick="J.process('open whatsapp')">WhatsApp</button>
+<button class="ab" onclick="J.process('open chrome')">Chrome</button>
+<button class="ab" onclick="J.process('what time')">Time</button>
+<button class="ab" onclick="J.process('help')">Help</button>
+</div></div>
+</aside>
+<footer class="bot">
+<span class="vn">JARVIS v2.0.0</span>
+<span class="sc">JARVIS AI ONLINE - ALL SYSTEMS OPERATIONAL - READY FOR COMMANDS</span>
+<div style="display:flex;gap:4px"><button class="mb" id="mn">-</button><button class="cb" id="cl">x</button></div>
+</footer>
+</div>
+
+<div class="nf off" id="nf"></div>
+
+<script>
+var J={
+on:false,
+micActive:false,
+rec:null,
+synth:window.speechSynthesis,
+bk:'http://localhost:8000',
+w:null,
+pts:[],
+speaking:false,
+processing:false,
+restartTimer:null,
+
+init:function(){
+var s=this;
+s.cv=document.getElementById('cv');s.cx=s.cv.getContext('2d');
+s.hud=document.getElementById('hud');s.ov=document.getElementById('overlay');
+s.sse=document.getElementById('ss');s.tme=document.getElementById('tm');
+s.de=document.getElementById('da');s.cfb=document.getElementById('cf');
+s.mfb=document.getElementById('mf');s.cve=document.getElementById('cv2');
+s.mve=document.getElementById('mv');s.mse=document.getElementById('ms');
+s.inp=document.getElementById('inp');s.oc=document.getElementById('oc');
+s.le=document.getElementById('li');s.ase=document.getElementById('as2');
+s.lge=document.getElementById('lg2');s.nfe=document.getElementById('nf');
+s.setupUI();s.setupWave();s.resize();s.startClock();s.mkp();
+if(s.synth.onvoiceschanged!==undefined){s.synth.onvoiceschanged=function(){}}
+},
+
+setupUI:function(){
+var s=this;
+document.getElementById('go').onclick=function(){s.activate()};
+document.getElementById('snd').onclick=function(){s.send()};
+document.getElementById('mc').onclick=function(){s.toggleMic()};
+document.getElementById('mn').onclick=function(){s.hud.classList.remove('on');s.notify('Minimized')};
+document.getElementById('cl').onclick=function(){s.hud.classList.remove('on');s.ov.style.display='flex';s.ov.classList.remove('hide')};
+s.inp.onkeydown=function(e){if(e.key==='Enter')s.send()};
+document.addEventListener('click',function(){try{if(s.synth.suspended)s.synth.resume()}catch(e){}},true);
+},
+
+setupWave:function(){for(var i=0;i<20;i++){var b=document.createElement('div');b.className='wb2';b.style.setProperty('--i',i);document.getElementById('wv').appendChild(b)}},
+
+activate:function(){
+var s=this;
+s.on=true;
+s.ov.classList.add('hide');
+try{if(s.synth.suspended)s.synth.resume()}catch(e){}
+setTimeout(function(){
+s.ov.style.display='none';
+s.hud.classList.add('on');
+s.sse.textContent='ONLINE';s.sse.style.color='#4DFF7C';
+s.addLog('System online');
+s.sts();
+s.checkBackend();
+s.startVoiceLoop();
+setTimeout(function(){s.speak('JARVIS online. How can I help you?')},500);
+},1000);
+},
+
+checkBackend:function(){
+var s=this;
+fetch(s.bk+'/health').then(function(r){if(r.ok){s.addLog('Backend connected');s.connectWS()}}).catch(function(){s.addLog('Backend offline')});
+},
+
+connectWS:function(){
+var s=this;
+try{s.w=new WebSocket('ws://localhost:8000/ws');
+s.w.onmessage=function(e){var d=JSON.parse(e.data);if(d.type==='complete'){s.speak(d.content);s.ase.textContent='STANDBY'}};
+s.w.onclose=function(){setTimeout(function(){s.connectWS()},5000)};
+s.w.onerror=function(){}}catch(e){}
+},
+
+// ============================================
+// THE KEY FIX: Voice loop that ALWAYS restarts
+// ============================================
+startVoiceLoop:function(){
+var s=this;
+s.micActive=true;
+s.initRecognition();
+// Fallback: if recognition dies, restart it every 2 seconds
+s.restartTimer=setInterval(function(){
+if(s.on && s.micActive && !s.rec){
+s.addLog('Restarting mic...');
+s.initRecognition();
+}
+},2000);
+},
+
+initRecognition:function(){
+var s=this;
+try{
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){s.addLog('Voice not supported');return}
+
+s.rec=new SR();
+s.rec.continuous=true;
+s.rec.interimResults=true;
+s.rec.lang='en-US';
+s.rec.maxAlternatives=1;
+
+s.rec.onresult=function(e){s.onSpeech(e)};
+
+s.rec.onerror=function(e){
+s.addLog('Voice error: '+e.error);
+if(e.error==='not-allowed'){
+s.notify('Allow microphone in browser settings');
+s.micActive=false;
+}else if(e.error==='network'){
+s.addLog('Network error - check connection');
+}
+// Don't set rec to null on error, let onend handle restart
+};
+
+s.rec.onend=function(){
+s.rec=null; // Clear the reference so fallback timer can recreate
+// Always restart if we should be listening
+if(s.on && s.micActive && !s.speaking && !s.processing){
+setTimeout(function(){s.initRecognition()},500);
+}
+};
+
+s.rec.start();
+s.setMicUI(true);
+s.addLog('Mic active');
+s.notify('Listening...');
+document.getElementById('vmStatus').textContent='ACTIVE';
+
+}catch(e){s.addLog('Voice init failed: '+e.message)}
+},
+
+toggleMic:function(){
+var s=this;
+try{if(s.synth.suspended)s.synth.resume()}catch(e){}
+if(!s.micActive){
+s.micActive=true;
+s.startVoiceLoop();
+s.notify('Mic ON');
+}else{
+s.micActive=false;
+if(s.rec){try{s.rec.stop()}catch(e){}}
+if(s.restartTimer){clearInterval(s.restartTimer);s.restartTimer=null}
+s.setMicUI(false);
+s.notify('Mic OFF');
+document.getElementById('vmStatus').textContent='OFF';
+}
+},
+
+setMicUI:function(on){
+var b=document.getElementById('mc');
+if(on){b.classList.add('on');b.textContent='ON'}
+else{b.classList.remove('on');b.textContent='MIC'}
+},
+
+onSpeech:function(e){
+var s=this;
+var final='';
+for(var i=e.resultIndex;i<e.results.length;i++){
+if(e.results[i].isFinal){
+final+=e.results[i][0].transcript;
+}
+}
+
+if(!final)return;
+var low=final.toLowerCase().trim();
+
+// Check for wake word OR process everything
+var hasWakeWord=false;
+var query='';
+
+if(low.indexOf('hey jarvis')!==-1||low.indexOf('hey jarvis')!==-1){
+hasWakeWord=true;
+query=final.replace(/hey jarvis/gi,'').trim();
+s.onWake();
+}else if(low.indexOf('jarvis')!==-1){
+hasWakeWord=true;
+query=final.replace(/jarvis/gi,'').trim();
+s.onWake();
+}else{
+// No wake word - still process the speech as a command
+query=low;
+}
+
+if(query){
+s.addLog('Heard: '+query);
+s.process(query);
+}
+},
+
+onWake:function(){
+var s=this;
+s.addLog('Wake word!');
+s.notify('Yes?');
+s.oc.classList.add('on');
+s.le.classList.add('on');
+s.ase.textContent='LISTENING';
+try{var ac=new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator();var g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=0.08;o.start();setTimeout(function(){o.stop();ac.close()},150)}catch(e){}
+setTimeout(function(){s.oc.classList.remove('on');s.le.classList.remove('on');s.ase.textContent='READY'},3000);
+},
+
+process:function(q){
+var s=this;
+if(!q||!q.trim()||s.processing)return;
+s.processing=true;
+s.addMsg('user',q);
+s.ase.textContent='PROCESSING';
+s.addLog('Query: '+q.substring(0,40));
+var m=s.addMsg('jarvis','Thinking...');
+
+// Try local commands first (instant)
+var local=s.handleLocal(q.toLowerCase().trim(),q);
+if(local){
+m.querySelector('.mx').textContent=local;
+s.speak(local);
+s.ase.textContent='STANDBY';
+s.addLog('Local response');
+s.processing=false;
+return;
+}
+
+// Try backend local command
+fetch(s.bk+'/api/local/command',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({command:q.toLowerCase()})
+}).then(function(r){return r.json()}).then(function(d){
+if(d&&d.response&&!d.response.includes('Could not find')){
+m.querySelector('.mx').textContent=d.response;
+s.speak(d.response);
+s.ase.textContent='STANDBY';
+s.processing=false;
+return;
+}
+// Try AI chat
+return fetch(s.bk+'/api/chat',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({message:q})
+}).then(function(r){return r.json()}).then(function(d2){
+m.querySelector('.mx').textContent=d2.response;
+s.speak(d2.response);
+s.processing=false;
+});
+}).catch(function(){
+m.querySelector('.mx').textContent='Offline: "'+q+'"';
+s.processing=false;
+});
+s.ase.textContent='STANDBY';
+},
+
+handleLocal:function(lq,raw){
+var s=this;var now=new Date();
+
+// HELP
+if(lq==='help'||lq==='what can you do'||lq==='commands'||lq==='command list')
+return'Available commands:\n- Open [app]: whatsapp, chrome, safari, terminal, vs code\n- Open [folder]: documents, downloads, desktop\n- Open [file]: any filename\n- What time / What date\n- Tell me a joke\n- System info\n- Find [filename]\n- Call [contact]\n- Message [contact]\n- Volume up/down/mute\n- WiFi on/off\n- Clear screen\n- Hello / How are you\n- Who made you\n- Thank you';
+
+// TIME
+if(lq==='what time'||lq==='time'||lq==='what is the time'||lq==='tell me the time'||lq==='current time')
+return'It is '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+
+// DATE
+if(lq==='what date'||lq==='date'||lq==='today'||lq==="what's the date"||lq==='what is today')
+return'Today is '+now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// DAY
+if(lq==='what day'||lq==='what day is it')
+return'Today is '+now.toLocaleDateString('en-US',{weekday:'long'});
+
+// JOKES
+if(lq==='joke'||lq==='tell me a joke'||lq==='say a joke'||lq==='funny'||lq==='make me laugh'){
+var js=['Why do programmers prefer dark mode? Light attracts bugs!','Why was the JS dev sad? Could not Node how to Express himself!','What is a computer favorite snack? Microchips!','Why did the computer go to the doctor? It had a virus!','How does a computer get drunk? Takes screenshots!','Why was the computer cold? Left its Windows open!','What do you call a computer that sings? A-Dell!','Why do Java developers wear glasses? Because they cannot C#!'];
+return js[Math.floor(Math.random()*js.length)];
+}
+
+// GREETINGS
+if(lq==='hello'||lq==='hi'||lq==='hey'||lq==='how are you'||lq==="how's it going"||lq==='how are you doing')
+return'Hello! I am JARVIS, your personal AI assistant. How can I help you today?';
+if(lq==='who are you'||lq==='what is your name'||lq==='tell me about yourself')
+return'I am JARVIS, Just A Rather Very Intelligent System. I am your personal AI assistant!';
+if(lq==='who made you'||lq==='who created you'||lq==='who built you')
+return'I was created by Yash, a talented developer!';
+if(lq==='thank you'||lq==='thanks'||lq==='thank u')
+return'You are welcome! Always happy to help.';
+if(lq==='good morning')return'Good morning! Have a productive day!';
+if(lq==='good night')return'Good night! Sleep well!';
+if(lq==='good afternoon')return'Good afternoon! How can I assist you?';
+if(lq==='good evening')return'Good evening! What can I do for you?';
+if(lq==='i love you')return'Thank you! I am here to help you.';
+if(lq==='are you real')return'I am an AI, as real as code can make me!';
+
+// SYSTEM
+if(lq==='system'||lq==='system info'||lq==='specs'||lq==='computer info')
+return'OS: '+navigator.platform+' | Screen: '+screen.width+'x'+screen.height+' | Cores: '+(navigator.hardwareConcurrency||'N/A');
+
+// OPEN APPS
+if(lq==='open whatsapp'||lq==='whatsapp'){s.openApp('whatsapp');return'Opening WhatsApp...'}
+if(lq==='open chrome'||lq==='chrome'){s.openApp('chrome');return'Opening Chrome...'}
+if(lq==='open safari'||lq==='safari'){s.openApp('safari');return'Opening Safari...'}
+if(lq==='open firefox'||lq==='firefox'){s.openApp('firefox');return'Opening Firefox...'}
+if(lq==='open terminal'||lq==='terminal'){s.openApp('terminal');return'Opening Terminal...'}
+if(lq==='open vs code'||lq==='open vscode'||lq==='vs code'||lq==='vscode'){s.openApp('vscode');return'Opening VS Code...'}
+if(lq==='open textedit'||lq==='textedit'){s.openApp('textedit');return'Opening TextEdit...'}
+if(lq==='open finder'||lq==='finder'){s.openApp('finder');return'Opening Finder...'}
+if(lq==='open music'||lq==='open apple music'){s.openApp('music');return'Opening Music...'}
+if(lq==='open spotify'||lq==='spotify'){s.openApp('spotify');return'Opening Spotify...'}
+if(lq==='open netflix'||lq==='netflix'){s.openApp('netflix');return'Opening Netflix...'}
+if(lq==='open youtube'||lq==='youtube'){s.openApp('youtube');return'Opening YouTube...'}
+if(lq==='open gmail'||lq==='gmail'){s.openApp('mail');return'Opening Mail...'}
+if(lq==='open calendar'||lq==='calendar'){s.openApp('calendar');return'Opening Calendar...'}
+if(lq==='open notes'||lq==='notes'){s.openApp('notes');return'Opening Notes...'}
+if(lq==='open photos'||lq==='photos'){s.openApp('photos');return'Opening Photos...'}
+if(lq==='open maps'||lq==='maps'){s.openApp('maps');return'Opening Maps...'}
+if(lq==='open messages'||lq==='messages'){s.openApp('messages');return'Opening Messages...'}
+if(lq==='open facetime'||lq==='facetime'){s.openApp('facetime');return'Opening FaceTime...'}
+if(lq==='open settings'||lq==='settings'){s.openApp('settings');return'Opening Settings...'}
+if(lq==='open calculator'||lq==='calculator'){s.openApp('calculator');return'Opening Calculator...'}
+if(lq==='open reminders'||lq==='reminders'){s.openApp('reminders');return'Opening Reminders...'}
+if(lq==='open preview'||lq==='preview'){s.openApp('preview');return'Opening Preview...'}
+if(lq==='open stickies'||lq==='stickies'){s.openApp('stickies');return'Opening Stickies...'}
+if(lq==='open chess'||lq==='chess'){s.openApp('chess');return'Opening Chess...'}
+if(lq==='open photo booth'||lq==='photo booth'){s.openApp('photobooth');return'Opening Photo Booth...'}
+if(lq==='open automator'||lq==='automator'){s.openApp('automator');return'Opening Automator...'}
+
+// OPEN FOLDERS
+if(lq==='open documents'||lq==='open document'||lq==='documents'){s.openPath('/Users/yashitarora/Documents');return'Opening Documents'}
+if(lq==='open downloads'||lq==='downloads'){s.openPath('/Users/yashitarora/Downloads');return'Opening Downloads'}
+if(lq==='open desktop'||lq==='desktop'){s.openPath('/Users/yashitarora/Desktop');return'Opening Desktop'}
+if(lq==='open pictures'||lq==='pictures'){s.openPath('/Users/yashitarora/Pictures');return'Opening Pictures'}
+if(lq==='open movies'||lq==='movies'){s.openPath('/Users/yashitarora/Movies');return'Opening Movies'}
+if(lq==='open applications'||lq==='apps'){s.openPath('/Applications');return'Opening Applications'}
+if(lq==='open home'||lq==='home'){s.openPath('/Users/yashitarora');return'Opening Home'}
+
+// OPEN ANYTHING
+if(lq.startsWith('open ')){
+var target=raw.substring(5).trim();
+if(target){s.openNative(target);return'Opening '+target}
+}
+
+// CALL
+if(lq.startsWith('call ')||lq.startsWith('facetime ')||lq.startsWith('video call ')){
+var contact=raw.replace(/^(call|facetime|video call)\s+/i,'').trim();
+s.openApp('facetime');return'Opening FaceTime to call '+contact;
+}
+
+// MESSAGE
+if(lq.startsWith('message ')||lq.startsWith('send message ')||lq.startsWith('text ')){
+var contact=raw.replace(/^(send message|message|text)\s+/i,'').trim();
+s.openApp('messages');return'Opening Messages to text '+contact;
+}
+
+// FIND FILES
+if(lq.startsWith('find ')||lq.startsWith('search ')||lq.startsWith('look for ')){
+var query=lq.replace(/^(find|search|look for)\s+/,'').trim();
+s.notify('Searching for '+query+'...');
+fetch(s.bk+'/api/local/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'find '+query})}).then(function(r){return r.json()}).then(function(d){
+if(d.results&&d.results.length>0){
+var list=d.results.map(function(r){return r.name}).join(', ');
+s.addMsg('jarvis','Found: '+list);
+s.speak('Found '+d.results.length+' results for '+query);
+}else{s.addMsg('jarvis','No files found for '+query)}
+});
+return'Searching...';
+}
+
+// VOLUME
+if(lq==='volume up'||lq==='turn volume up'||lq==='louder'){
+s.execCmd('osascript -e "set volume output volume (output volume of (get volume settings) + 10)"');
+return'Volume increased';
+}
+if(lq==='volume down'||lq==='turn volume down'||lq==='quieter'){
+s.execCmd('osascript -e "set volume output volume (output volume of (get volume settings) - 10)"');
+return'Volume decreased';
+}
+if(lq==='mute'||lq==='volume mute'||lq==='silence'){
+s.execCmd('osascript -e "set volume with output muted"');return'Volume muted';
+}
+if(lq==='unmute'||lq==='volume unmute'){
+s.execCmd('osascript -e "set volume without output muted"');return'Volume unmuted';
+}
+
+// WIFI
+if(lq==='wifi on'||lq==='turn wifi on'){s.execCmd('networksetup -setairportpower en0 on');return'WiFi on'}
+if(lq==='wifi off'||lq==='turn wifi off'){s.execCmd('networksetup -setairportpower en0 off');return'WiFi off'}
+
+// BRIGHTNESS
+if(lq==='brightness up'||lq==='brighter'){s.execCmd('brightness 1');return'Brightness up'}
+if(lq==='brightness down'||lq==='dimmer'){s.execCmd('brightness 0.5');return'Brightness down'}
+
+// CLEAR
+if(lq==='clear'||lq==='clear screen'||lq==='clear chat'){s.mse.innerHTML='';return'Screen cleared'}
+
+// CALCULATOR
+if(lq.startsWith('calculate ')||lq.startsWith('calc ')){
+var expr=raw.replace(/^(calculate|calc)\s+/i,'').trim();
+try{var result=eval(expr.replace(/[^0-9+\-*/().]/g,''));return'The result is '+result}catch(e){return'Could not calculate that'}
+}
+
+// RANDOM NUMBER
+if(lq==='random number'||lq==='random'||lq==='give me a random number'){
+var rand=Math.floor(Math.random()*100)+1;return'Random number: '+rand;
+}
+
+// SPELL
+if(lq.startsWith('spell ')){
+var word=raw.replace(/^spell\s+/i,'').trim();return'Spelling: '+word.split('').join(' ');
+}
+
+// WEATHER
+if(lq==='weather'||lq==='what is the weather'||lq==='whats the weather like'){
+return'I can check weather for you. What city are you in?';
+}
+
+// SHUTDOWN
+if(lq==='shutdown'||lq==='shut down'){return'Shutting down. Goodbye!'}
+
+// RESTART
+if(lq==='restart'||lq==='reboot'){return'Restarting...'}
+
+// SLEEP
+if(lq==='sleep'||lq==='go to sleep'){return'Going to sleep...'}
+
+return null;
+},
+
+openApp:function(appName){
+var s=this;
+var appMap={
+'whatsapp':'/Applications/WhatsApp.app',
+'chrome':'/Applications/Google Chrome.app',
+'safari':'/Applications/Safari.app',
+'firefox':'/Applications/Firefox.app',
+'terminal':'/Applications/Utilities/Terminal.app',
+'vscode':'/Applications/Visual Studio Code.app',
+'textedit':'/Applications/TextEdit.app',
+'finder':'/System/Library/CoreServices/Finder.app',
+'music':'/Applications/Music.app',
+'spotify':'/Applications/Spotify.app',
+'netflix':'/Applications/Netflix.app',
+'youtube':'https://www.youtube.com',
+'gmail':'https://mail.google.com',
+'mail':'/Applications/Mail.app',
+'calendar':'/Applications/Calendar.app',
+'notes':'/Applications/Notes.app',
+'photos':'/Applications/Photos.app',
+'maps':'/Applications/Maps.app',
+'messages':'/Applications/Messages.app',
+'facetime':'/Applications/FaceTime.app',
+'settings':'/Applications/System Settings.app',
+'calculator':'/Applications/Calculator.app',
+'reminders':'/Applications/Reminders.app',
+'preview':'/Applications/Preview.app',
+'stickies':'/Applications/Stickies.app',
+'chess':'/Applications/Chess.app',
+'photobooth':'/Applications/Photo Booth.app',
+'automator':'/Applications/Automator.app',
+'activitymonitor':'/Applications/Utilities/Activity Monitor.app',
+'diskutility':'/Applications/Utilities/Disk Utility.app',
+'dictionary':'/Applications/Dictionary.app',
+'fontbook':'/Applications/Font Book.app',
+'console':'/Applications/Utilities/Console.app',
+'keychain':'/Applications/Utilities/Keychain Access.app',
+'systeminformation':'/Applications/Utilities/System Information.app'
+};
+var path=appMap[appName.toLowerCase()];
+if(path){
+if(path.startsWith('http')){window.open(path,'_blank')}
+else{fetch(s.bk+'/api/system/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'open "'+path+'"'})}).catch(function(){})}
+s.notify('Opened '+appName);s.addLog('Opened '+appName);
+}else{s.openNative(appName)}
+},
+
+openPath:function(path){
+var s=this;
+fetch(s.bk+'/api/system/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'open "'+path+'"'})}).catch(function(){});
+s.notify('Opened!');
+},
+
+openNative:function(target){
+var s=this;
+fetch(s.bk+'/api/local/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:'open '+target})}).then(function(r){return r.json()}).then(function(d){
+if(d&&d.response)s.notify(d.response);
+}).catch(function(){s.notify('Could not open '+target)});
+},
+
+execCmd:function(cmd){
+fetch(this.bk+'/api/system/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})}).catch(function(){});
+},
+
+send:function(){
+var s=this;var v=s.inp.value.trim();
+if(v){try{if(s.synth.suspended)s.synth.resume()}catch(e){}s.process(v);s.inp.value=''}
+},
+
+speak:function(t){
+var s=this;
+if(!t||t==='Thinking...')return;
+s.synth.cancel();
+try{if(s.synth.suspended)s.synth.resume()}catch(e){}
+s.speaking=true;
+s.oc.classList.add('tk');
+s.ase.textContent='SPEAKING';
+var u=new SpeechSynthesisUtterance(t);
+u.rate=1.05;u.pitch=1;u.volume=1;
+var voices=s.synth.getVoices();
+for(var i=0;i<voices.length;i++){
+if(voices[i].name.indexOf('Google')!==-1||voices[i].name.indexOf('Samantha')!==-1||voices[i].name.indexOf('Alex')!==-1){
+u.voice=voices[i];break;
+}
+if(voices[i].lang.indexOf('en')!==-1){u.voice=voices[i];break}
+}
+u.onerror=function(){s.oc.classList.remove('tk');s.ase.textContent='STANDBY';s.speaking=false};
+u.onend=function(){
+s.oc.classList.remove('tk');
+s.ase.textContent='STANDBY';
+s.speaking=false;
+// RESTART MIC after speaking ends
+if(s.on&&s.micActive&&!s.rec){
+setTimeout(function(){s.initRecognition()},300);
+}
+};
+s.synth.speak(u);
+},
+
+addMsg:function(role,content){
+var d=document.createElement('div');d.className='mg '+role;
+d.innerHTML='<div class="av">'+(role==='user'?'YOU':'J')+'</div><div class="mx">'+content+'</div>';
+this.mse.appendChild(d);this.mse.scrollTop=this.mse.scrollHeight;return d;
+},
+
+addLog:function(m){
+var n=new Date();var t=n.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+var e=document.createElement('div');e.className='le';
+e.innerHTML='<span class="lt2">'+t+'</span><span class="lm">'+m+'</span>';
+this.lge.insertBefore(e,this.lge.firstChild);
+if(this.lge.children.length>25)this.lge.removeChild(this.lge.lastChild);
+},
+
+notify:function(m){this.nfe.textContent=m;this.nfe.classList.remove('off');var s=this;setTimeout(function(){s.nfe.classList.add('off')},3500)},
+
+startClock:function(){var s=this;s.tick();setInterval(function(){s.tick()},1000)},
+tick:function(){var n=new Date();this.tme.textContent=n.toLocaleTimeString('en-US',{hour12:false});this.de.textContent=n.toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'})},
+
+resize:function(){this.cv.width=window.innerWidth;this.cv.height=window.innerHeight;var s=this;window.onresize=function(){s.cv.width=window.innerWidth;s.cv.height=window.innerHeight}},
+
+mkp:function(){
+var s=this;s.pts=[];
+for(var i=0;i<80;i++)s.pts.push({x:Math.random()*s.cv.width,y:Math.random()*s.cv.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,s:Math.random()*2+.5,a:Math.random()*.4+.1});
+s.anim()
+},
+
+anim:function(){
+var s=this;s.cx.clearRect(0,0,s.cv.width,s.cv.height);
+s.pts.forEach(function(p,i){
+p.x+=p.vx;p.y+=p.vy;
+if(p.x<0)p.x=s.cv.width;if(p.x>s.cv.width)p.x=0;if(p.y<0)p.y=s.cv.height;if(p.y>s.cv.height)p.y=0;
+s.cx.beginPath();s.cx.arc(p.x,p.y,p.s,0,Math.PI*2);s.cx.fillStyle='rgba(0,212,255,'+p.a+')';s.cx.fill();
+for(var j=i+1;j<s.pts.length;j++){var dx=p.x-s.pts[j].x,dy=p.y-s.pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+if(d<100){s.cx.beginPath();s.cx.moveTo(p.x,p.y);s.cx.lineTo(s.pts[j].x,s.pts[j].y);s.cx.strokeStyle='rgba(0,212,255,'+(0.1*(1-d/100))+')';s.cx.lineWidth=.5;s.cx.stroke()}}
+});
+requestAnimationFrame(function(){s.anim()});
+},
+
+sts:function(){
+var s=this;
+fetch(s.bk+'/api/system/stats').then(function(r){return r.json()}).then(function(d){
+if(d.cpu_percent!==undefined){s.cfb.style.width=d.cpu_percent+'%';s.cve.textContent=Math.round(d.cpu_percent)+'%'}
+if(d.memory_percent!==undefined){s.mfb.style.width=d.memory_percent+'%';s.mve.textContent=Math.round(d.memory_percent)+'%'}
+}).catch(function(){var c=Math.floor(Math.random()*25+15),m=Math.floor(Math.random()*20+45);s.cfb.style.width=c+'%';s.mfb.style.width=m+'%';s.cve.textContent=c+'%';s.mve.textContent=m+'%'})
+}
+};
+
+document.addEventListener('DOMContentLoaded',function(){J.init()});
+</script>
+</body>
+</html>
